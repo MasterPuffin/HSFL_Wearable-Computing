@@ -1,0 +1,1 @@
+Beim Bildschirm muss der I2C Pin von 0x3D auf 0x3C geändert werden
