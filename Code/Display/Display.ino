@@ -29,7 +29,7 @@ int currentButtonState; // the current state of button
 
 int sound_digital = 0;
 int sound_analog = 4;
-int maxsteps = 500;
+int maxsteps = 200;
 int steps = maxsteps;
 int avgval = 0;
 int addedval = 0;
@@ -70,33 +70,25 @@ void loop() {
       avgval = int(addedval / maxsteps);
     }
     delay(10);
-    Serial.println("Wait, calibraiting");
+    Serial.println("Wait, calibrating");
     display.clearDisplay();
     display.drawBitmap(0, 0, bitmap_w, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
     display.display();
     return;
   }
   Serial.println(val_analog);
+  Serial.println(avgval);
   // check if value is louder than environment + correction value
-  if (val_analog > int(avgval * 1.14))
-  {
+  if (val_analog > int(avgval * 1.035)) {
     Serial.println("Stufe 2");
     imageToDraw = 3;
-  }
-  if (val_analog > int(avgval * 1.12))
-  {
+  } else if (val_analog >= int(avgval * 1.03)) {
     Serial.println("Stufe 1");
     imageToDraw = 2;
-  }
-  else if (val_analog > int(avgval * 1.1))
-  {
+  } else if (val_analog >= int(avgval * 1.025))  {
     Serial.println("Stufe 0");
     imageToDraw = 1;
-  }
-
-  // else don't show something
-  else
-  {
+  } else {
     Serial.println("Stufe none");
     imageToDraw = 0;
   }
@@ -114,18 +106,17 @@ void loop() {
     imageToDraw = -1;
   }
 
-  Serial.println(draw);
   Serial.println(imageToDraw);
 
   if (imageToDraw != currentImage) {
     display.clearDisplay();
     switch (imageToDraw) {
       case 3:
-        Serial.println("Draw 1");
+        Serial.println("Draw 3");
         display.drawBitmap(0, 0, bitmap_3, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
         break;
       case 2:
-        Serial.println("Draw 1");
+        Serial.println("Draw 2");
         display.drawBitmap(0, 0, bitmap_2, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
         break;
       case 1:
@@ -140,6 +131,13 @@ void loop() {
     display.display();
     currentImage = imageToDraw;
 
+    switch (imageToDraw) {
+      case 3:
+      case 2:
+      case 1:
+      case 0:
+        delay(1000);
+        break;
+    }
   }
-  delay(100);
 }
