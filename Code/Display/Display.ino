@@ -15,6 +15,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #include "src/0.h"
 #include "src/1.h"
+#include "src/2.h"
+#include "src/3.h"
+#include "src/w.h"
 
 
 #define LOGO_HEIGHT   16
@@ -24,6 +27,13 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 int lastButtonState;    // the previous state of button
 int currentButtonState; // the current state of button
 
+int sound_digital = 0;
+int sound_analog = 4;
+int maxsteps = 500;
+int steps = maxsteps;
+int avgval = 0;
+int addedval = 0;
+
 
 void setup() {
   Serial.begin(9600);
@@ -31,6 +41,7 @@ void setup() {
   pinMode(BTN_PIN, INPUT);
   currentButtonState = digitalRead(BTN_PIN);
 
+  pinMode(sound_digital, INPUT);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -44,38 +55,91 @@ int loudness = 0;
 bool draw = true;
 
 void loop() {
+  int imageToDraw = -1;
+
+  //Sound detection
+  int val_analog = analogRead(sound_analog);
+
+  // calibrate by taking first 1000 values for envoronment - average
+  if (steps > 0) {
+    addedval = addedval + val_analog;
+    steps = steps - 1;
+
+    // calculate average after getting values
+    if (steps == 0) {
+      avgval = int(addedval / maxsteps);
+    }
+    delay(10);
+    Serial.println("Wait, calibraiting");
+    display.clearDisplay();
+    display.drawBitmap(0, 0, bitmap_w, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+    display.display();
+    return;
+  }
+  Serial.println(val_analog);
+  // check if value is louder than environment + correction value
+  if (val_analog > int(avgval * 1.14))
+  {
+    Serial.println("Stufe 2");
+    imageToDraw = 3;
+  }
+  if (val_analog > int(avgval * 1.12))
+  {
+    Serial.println("Stufe 1");
+    imageToDraw = 2;
+  }
+  else if (val_analog > int(avgval * 1.1))
+  {
+    Serial.println("Stufe 0");
+    imageToDraw = 1;
+  }
+
+  // else don't show something
+  else
+  {
+    Serial.println("Stufe none");
+    imageToDraw = 0;
+  }
+
+  //Image Drawing
   lastButtonState    = currentButtonState;      // save the last state
   currentButtonState = digitalRead(BTN_PIN); // read new state
-  int imageToDraw;
+
 
   if (lastButtonState == HIGH && currentButtonState == LOW) {
     draw = !draw;
   }
 
-  if (draw) {
-    if (loudness > 127) {
-      imageToDraw = 1;
-    } else if (loudness > 63) {
-      imageToDraw = 1;
-    } else {
-      imageToDraw = 0;
-    }
-  } else {
+  if (!draw) {
     imageToDraw = -1;
   }
+
+  Serial.println(draw);
+  Serial.println(imageToDraw);
 
   if (imageToDraw != currentImage) {
     display.clearDisplay();
     switch (imageToDraw) {
+      case 3:
+        Serial.println("Draw 1");
+        display.drawBitmap(0, 0, bitmap_3, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        break;
+      case 2:
+        Serial.println("Draw 1");
+        display.drawBitmap(0, 0, bitmap_2, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        break;
       case 1:
-        display.drawBitmap(0, 0, bitmap_0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        Serial.println("Draw 1");
+        display.drawBitmap(0, 0, bitmap_1, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
         break;
       case 0:
+        Serial.println("Draw 0");
         display.drawBitmap(0, 0, bitmap_0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
         break;
     }
     display.display();
     currentImage = imageToDraw;
-    delay(100);
+
   }
+  delay(100);
 }
