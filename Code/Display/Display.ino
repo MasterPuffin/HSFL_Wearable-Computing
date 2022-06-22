@@ -135,8 +135,10 @@ void loop() {
       case 3:
       case 2:
       case 1:
+        delay(500);
+        break;
       case 0:
-        delay(1000);
+        delay(100);
         break;
     }
   }
